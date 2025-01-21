@@ -1,8 +1,6 @@
----
 - name: Restart Docker container
   hosts: localhost
   tasks:
     - name: Restart the container
-      ansible.builtin.shell: docker restart heheh
-      args:
-        warn: false
+      ansible.builtin.command:
+        cmd: docker restart heheh
