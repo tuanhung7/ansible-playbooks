@@ -3,4 +3,4 @@
   tasks:
     - name: Restart the container
       ansible.builtin.command:
-        cmd: docker restart heheh
+        cmd: sudo docker restart heheh
