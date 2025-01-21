@@ -1,12 +1,8 @@
 ---
 - name: Restart Docker container
-  hosts: all
-  become: true
+  hosts: localhost
   tasks:
     - name: Restart the container
-      ansible.builtin.shell: |
-        sudo docker restart {{ container_name }}
+      ansible.builtin.shell: docker restart heheh
       args:
         warn: false
-      environment:
-        DOCKER_HOST: unix:///var/run/docker.sock
