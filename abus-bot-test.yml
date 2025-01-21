@@ -1,6 +1,8 @@
+---
 - name: Restart Docker container
-  hosts: localhost
+  hosts: 137.184.187.139
+  remote_user: root
   tasks:
-    - name: Restart the container
+    - name: Restart the Docker container
       ansible.builtin.command:
         cmd: sudo docker restart heheh
