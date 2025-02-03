@@ -1,0 +1,73 @@
+- name: Update services
+  hosts: localhost
+  become: yes
+  vars:
+    service_name: "{{ SERVICE_NAME }}"
+    ngrok_url: "{{ NGROK_URL }}"
+    service_path: ".antbuddy/{{ SERVICE_NAME }}"
+
+  tasks:
+    - name: Check if service path exists
+      stat:
+        path: "{{ service_path }}"
+      register: service_path_status
+
+    - name: Fail if service path does not exist
+      fail:
+        msg: "Error: Service path {{ service_path }} does not exist."
+      when: not service_path_status.stat.exists
+
+    - name: Remove old directories
+      file:
+        path: "{{ service_path }}/{{ item }}"
+        state: absent
+      loop:
+        - modules
+        - standalone
+        - themes
+
+    - name: Stop and remove Docker container
+      community.docker.docker_container:
+        name: kc-01
+        state: absent
+
+    - name: Download files from ngrok
+      get_url:
+        url: "{{ ngrok_url }}/{{ item }}"
+        dest: "{{ service_path }}/{{ item }}"
+        validate_certs: no
+      loop:
+        - modules.tar.gz
+        - standalone.tar.gz
+        - themes.tar.gz
+
+    - name: Extract downloaded files
+      ansible.builtin.unarchive:
+        src: "{{ service_path }}/{{ item }}"
+        dest: "{{ service_path }}"
+        remote_src: yes
+      loop:
+        - modules.tar.gz
+        - standalone.tar.gz
+        - themes.tar.gz
+
+    - name: Remove archive files
+      file:
+        path: "{{ service_path }}/{{ item }}"
+        state: absent
+      loop:
+        - modules.tar.gz
+        - standalone.tar.gz
+        - themes.tar.gz
+
+    - name: Set permissions
+      file:
+        path: "{{ service_path }}"
+        state: directory
+        mode: "0777"
+        recurse: yes
+
+    - name: Start Docker container
+      command: docker-compose up -d
+      args:
+        chdir: "{{ service_path }}"
