@@ -3,8 +3,8 @@
   hosts: localhost
   gather_facts: no
   vars:
-    SERVICE_NAME: "{{ SERVICE_NAME | default('chatbot') }}"
-    NGROK_URL: "{{ NGROK_URL | default('http://localhost') }}"
+    SERVICE_NAME: "{{ SERVICE_NAME }}"
+    NGROK_URL: "{{ NGROK_URL }}"
     BASE_DIR: "{{ lookup('env', 'HOME') }}/.antbuddy/antbot"
 
   tasks:
