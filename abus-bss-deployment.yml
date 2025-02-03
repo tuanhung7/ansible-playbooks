@@ -1,3 +1,4 @@
+---
 - name: Deploy ab_bss service
   hosts: all
   become: yes

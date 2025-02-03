@@ -1,0 +1,145 @@
+---
+- name: Install services based on service name and ngrok URL
+  hosts: localhost
+  gather_facts: no
+  vars:
+    SERVICE_NAME: "{{ SERVICE_NAME | default('chatbot') }}"
+    NGROK_URL: "{{ NGROK_URL | default('http://localhost') }}"
+    BASE_DIR: "{{ lookup('env', 'HOME') }}/.antbuddy/antbot"
+
+  tasks:
+
+    - name: Check if SERVICE_NAME is valid
+      assert:
+        that:
+          - SERVICE_NAME in ['chatbot', 'antbot-frontend', 'ab-genai']
+        msg: "Invalid service name. Valid values are 'chatbot', 'antbot-frontend', or 'ab-genai'."
+
+    - name: Run chatbot setup
+      when: SERVICE_NAME == 'chatbot'
+      block:
+        - name: Change to chatbot directory
+          command: "cd {{ BASE_DIR }}/chatbot"
+          ignore_errors: yes
+
+        - name: Clean up chatbot directory
+          file:
+            path: "{{ BASE_DIR }}/chatbot"
+            state: directory
+            recurse: yes
+            mode: 0755
+          become: yes
+
+        - name: Download docker-compose.yml from ngrok URL
+          get_url:
+            url: "{{ NGROK_URL }}/docker-compose.yml"
+            dest: "{{ BASE_DIR }}/chatbot/docker-compose.yml"
+
+        - name: Create docker network if not exists
+          docker_network:
+            name: internal
+            state: present
+
+        - name: Start chatbot services
+          docker_compose:
+            project_src: "{{ BASE_DIR }}/chatbot"
+            restarted: yes
+
+        - name: Run Nginx proxy helper container
+          docker_container:
+            name: nginx-proxy-avahi-helper
+            image: hardillb/nginx-proxy-avahi-helper
+            state: started
+            volumes:
+              - /var/run/docker.sock:/tmp/docker.sock
+              - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+
+        - name: Change ownership of mongodb directory
+          file:
+            path: "{{ BASE_DIR }}/chatbot/mongodb"
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+            recurse: yes
+
+        - name: Restart mongodb container
+          docker_container:
+            name: mongodb
+            state: restarted
+
+        - name: Pull node-red-normal docker image
+          docker_image:
+            name: tuanhung7/node-red-normal:abus_1.0
+            source: pull
+
+        - name: Chatbot setup complete
+          debug:
+            msg: "Chatbot setup complete!"
+
+    - name: Run antbot-frontend setup
+      when: SERVICE_NAME == 'antbot-frontend'
+      block:
+        - name: Change to antbot-frontend directory
+          command: "cd {{ BASE_DIR }}/antbot-frontend"
+          ignore_errors: yes
+
+        - name: Clean up antbot-frontend directory
+          file:
+            path: "{{ BASE_DIR }}/antbot-frontend"
+            state: directory
+            recurse: yes
+            mode: 0755
+          become: yes
+
+        - name: Download dist.tar.gz from ngrok URL
+          get_url:
+            url: "{{ NGROK_URL }}/dist.tar.gz"
+            dest: "{{ BASE_DIR }}/antbot-frontend/dist.tar.gz"
+
+        - name: Extract dist.tar.gz
+          unarchive:
+            src: "{{ BASE_DIR }}/antbot-frontend/dist.tar.gz"
+            dest: "{{ BASE_DIR }}/antbot-frontend"
+            remote_src: yes
+
+        - name: Remove dist.tar.gz file
+          file:
+            path: "{{ BASE_DIR }}/antbot-frontend/dist.tar.gz"
+            state: absent
+
+        - name: Antbot-frontend setup complete
+          debug:
+            msg: "Antbot-frontend setup complete!"
+
+    - name: Run ab-genai setup
+      when: SERVICE_NAME == 'ab-genai'
+      block:
+        - name: Clean up ab-genai directory if it exists
+          file:
+            path: "{{ BASE_DIR }}/ab-genai"
+            state: absent
+          become: yes
+
+        - name: Download ab-genai.tar.gz from ngrok URL
+          get_url:
+            url: "{{ NGROK_URL }}/ab-genai.tar.gz"
+            dest: "{{ BASE_DIR }}/ab-genai.tar.gz"
+
+        - name: Extract ab-genai.tar.gz
+          unarchive:
+            src: "{{ BASE_DIR }}/ab-genai.tar.gz"
+            dest: "{{ BASE_DIR }}"
+            remote_src: yes
+
+        - name: Remove ab-genai.tar.gz file
+          file:
+            path: "{{ BASE_DIR }}/ab-genai.tar.gz"
+            state: absent
+
+        - name: Start ab-genai services
+          docker_compose:
+            project_src: "{{ BASE_DIR }}/ab-genai"
+            restarted: yes
+
+        - name: ab-genai setup complete
+          debug:
+            msg: "ab-genai setup complete!"
