@@ -1,0 +1,76 @@
+---
+- name: Deploy and configure services
+  hosts: all
+  become: yes
+  vars:
+    base_dir_sync: "/home/antbuddy/.antbuddy"
+    base_dir_download: "/home/antbuddy/.temp"
+    service_name: "{{ SERVICE_NAME }}"
+    ngrok_url: "{{ NGROK_URL }}"
+
+  tasks:
+    - name: Ensure download directory exists
+      file:
+        path: "{{ base_dir_download }}"
+        state: directory
+        mode: '0755'
+
+    - name: Clean up download directory
+      file:
+        path: "{{ base_dir_download }}"
+        state: absent
+      ignore_errors: yes
+
+    - name: Recreate download directory
+      file:
+        path: "{{ base_dir_download }}"
+        state: directory
+        mode: '0755'
+
+    - name: Download the service tarball
+      get_url:
+        url: "{{ ngrok_url }}/{{ service_name }}.tar.gz"
+        dest: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
+        validate_certs: no
+
+    - name: Check if the tarball exists
+      stat:
+        path: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
+      register: tarball
+
+    - name: Fail if tarball does not exist
+      fail:
+        msg: "Error: {{ service_name }}.tar.gz not found after download!"
+      when: not tarball.stat.exists
+
+    - name: Extract the tarball
+      unarchive:
+        src: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
+        dest: "{{ base_dir_download }}"
+        remote_src: yes
+
+    - name: Check if 'dist' directory exists
+      stat:
+        path: "{{ base_dir_download }}/dist"
+      register: dist_dir
+
+    - name: Fail if 'dist' directory does not exist
+      fail:
+        msg: "Error: 'dist' directory not found after extraction!"
+      when: not dist_dir.stat.exists
+
+    - name: Ensure destination directory exists
+      file:
+        path: "{{ base_dir_sync }}/{{ service_name }}"
+        state: directory
+        mode: '0755'
+
+    - name: Synchronize files to destination directory
+      synchronize:
+        src: "{{ base_dir_download }}/dist/"
+        dest: "{{ base_dir_sync }}/{{ service_name }}/"
+        recursive: yes
+
+    - name: Print completion message
+      debug:
+        msg: "{{ service_name }} setup complete!"
