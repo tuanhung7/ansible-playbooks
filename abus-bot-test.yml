@@ -1,6 +1,6 @@
 ---
 - name: Restart Docker container
-  hosts: abus-bot-host
+  hosts: abus-bot
   remote_user: root
   tasks:
     - name: Restart the Docker container

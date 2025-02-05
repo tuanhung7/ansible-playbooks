@@ -1,11 +1,12 @@
 ---
 - name: Update services
-  hosts: localhost
+  hosts: abus-oss
+  remote_user: root
   become: yes
   vars:
     service_name: "{{ SERVICE_NAME }}"
     ngrok_url: "{{ NGROK_URL }}"
-    service_path: "{{ ansible_env.HOME }}/.antbuddy/{{ SERVICE_NAME }}"
+    service_path: "/root/.antbuddy/{{ SERVICE_NAME }}"
 
   tasks:
     - name: Check if service path exists

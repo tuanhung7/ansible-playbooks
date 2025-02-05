@@ -1,6 +1,7 @@
 ---
 - name: Install ab_callcenter_ui Service
-  hosts: localhost
+  hosts: abus-oss
+  remote_user: root
   become: yes
   vars:
     SERVICE_NAME: "{{ service_name }}"
