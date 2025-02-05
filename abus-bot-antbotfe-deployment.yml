@@ -6,7 +6,7 @@
   vars:
     SERVICE_NAME: "{{ SERVICE_NAME }}"
     NGROK_URL: "{{ NGROK_URL }}"
-    BASE_DIR: "{{ lookup('env', 'HOME') }}/.antbuddy/antbot"
+    BASE_DIR: "/root/.antbuddy/antbot"
 
   tasks:
     - name: Ensure SERVICE_NAME is valid
