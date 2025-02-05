@@ -36,7 +36,7 @@
         executable: /bin/bash
 
     - name: Set NODE_ENV and run gulp task
-      # become_user: antbuddy
+      become_user: antbuddy
       shell: |
         export NODE_ENV=production gulp templatecach && \
         cd ~/.antbuddy/ab-prod-beta/ && \
