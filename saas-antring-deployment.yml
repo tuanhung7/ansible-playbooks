@@ -45,6 +45,7 @@
     - name: Run update-asset-version.sh script
       become_user: antbuddy
       shell: |
+        cd ~/.antbuddy/ab-prod-beta/ && \
         ./update-asset-version.sh
       args:
         executable: /bin/bash
