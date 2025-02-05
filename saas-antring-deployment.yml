@@ -9,16 +9,53 @@
     pm2_process_id: "10"
 
   tasks:
-    - name: Execute all commands as antbuddy user
+    - name: Switch to antbuddy user and pull latest changes from Git
       become_user: antbuddy
       shell: |
-        cd ~/.antbuddy/ab-prod-beta/ &&
-        eval "$(ssh-agent -s)" &&
-        ssh-add ~/.ssh/id_ed25519 &&
-        git pull origin antbuddy-production &&
-        NODE_ENV="{{ node_env }}" gulp "{{ gulp_task }}" &&
-        ./update-asset-version.sh &&
-        pm2 reload "{{ pm2_process_id }}"
+        cd ~/.antbuddy/ab-prod-beta/ && \
+        eval "$(ssh-agent -s)" && \
+        ssh-add ~/.ssh/id_ed25519 && \
+        git pull origin antbuddy-production
+      args:
+        executable: /bin/bash
+      register: git_pull_result
+      ignore_errors: yes  # Không làm fail playbook nếu git pull lỗi
+
+    - name: Debug Git pull output
+      debug:
+        var: git_pull_result
+
+    - name: Ensure repository exists
+      become_user: antbuddy
+      shell: |
+        if [ ! -d ~/.antbuddy/ab-prod-beta/.git ]; then
+          echo "Git repository not found! Please check if it has been cloned."
+          exit 1
+        fi
+      args:
+        executable: /bin/bash
+
+    - name: Set NODE_ENV and run gulp task
+      become_user: antbuddy
+      shell: |
+        export NODE_ENV={{ node_env }} && \
+        cd ~/.antbuddy/ab-prod-beta/ && \
+        gulp {{ gulp_task }}
+      args:
+        executable: /bin/bash
+
+    - name: Run update-asset-version.sh script
+      become_user: antbuddy
+      shell: |
+        cd ~/.antbuddy/ab-prod-beta/ && \
+        ./update-asset-version.sh
+      args:
+        executable: /bin/bash
+
+    - name: Reload PM2 process
+      become_user: antbuddy
+      shell: |
+        pm2 reload {{ pm2_process_id }}
       args:
         executable: /bin/bash
 
