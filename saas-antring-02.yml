@@ -1,0 +1,17 @@
+---
+- name: Execute deployment script as antbuddy user
+  hosts: ab-antring-02
+  remote_user: root
+  become: yes
+  tasks:
+    - name: Switch to antbuddy user and execute deployment script
+      become_user: antbuddy
+      shell: |
+        cd ~/.script/ && \
+        ./deploy.prod.sh
+      args:
+        executable: /bin/bash
+
+    - name: Print completion message
+      debug:
+        msg: "Deployment script executed successfully!"
