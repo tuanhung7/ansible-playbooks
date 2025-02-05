@@ -38,13 +38,7 @@
     - name: Set NODE_ENV and run gulp task
       become_user: antbuddy
       shell: |
-        export NODE_ENV=production gulp templatecach
-      args:
-        executable: /bin/bash
-
-    - name: Run update-asset-version.sh script
-      become_user: antbuddy
-      shell: |
+        export NODE_ENV=production gulp templatecach && \
         cd ~/.antbuddy/ab-prod-beta/ && \
         ./update-asset-version.sh
       args:
