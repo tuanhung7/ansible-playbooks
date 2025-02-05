@@ -10,7 +10,7 @@
 
   tasks:
     - name: Switch to antbuddy user and pull latest changes from Git
-      become_user: antbuddy
+      # become_user: antbuddy
       shell: |
         cd ~/.antbuddy/ab-prod-beta/ && \
         eval "$(ssh-agent -s)" && \
@@ -26,7 +26,7 @@
         var: git_pull_result
 
     - name: Ensure repository exists
-      become_user: antbuddy
+      # become_user: antbuddy
       shell: |
         if [ ! -d ~/.antbuddy/ab-prod-beta/.git ]; then
           echo "Git repository not found! Please check if it has been cloned."
@@ -36,7 +36,7 @@
         executable: /bin/bash
 
     - name: Set NODE_ENV and run gulp task
-      become_user: antbuddy
+      # become_user: antbuddy
       shell: |
         export NODE_ENV=production gulp templatecach && \
         cd ~/.antbuddy/ab-prod-beta/ && \
@@ -45,7 +45,7 @@
         executable: /bin/bash
 
     - name: Reload PM2 process
-      become_user: antbuddy
+      # become_user: antbuddy
       shell: |
         pm2 reload 10
       args:
