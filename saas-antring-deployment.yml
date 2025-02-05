@@ -9,37 +9,18 @@
     pm2_process_id: "10"
 
   tasks:
-    - name: Switch to antbuddy user
+    - name: Execute all commands as antbuddy user
       become_user: antbuddy
       shell: |
-        cd ~/.antbuddy/ab-prod-beta/
-
-    - name: Start SSH agent and add SSH key
-      become_user: antbuddy
-      shell: |
-        eval "$(ssh-agent -s)"
-        ssh-add ~/.ssh/id_ed25519
-
-    - name: Pull latest changes from Git repository
-      become_user: antbuddy
-      shell: |
-        git pull origin antbuddy-production
-
-    - name: Set NODE_ENV and run gulp task
-      become_user: antbuddy
-      shell: |
-        export NODE_ENV={{ node_env }}
-        gulp {{ gulp_task }}
-
-    - name: Run update-asset-version.sh script
-      become_user: antbuddy
-      shell: |
-        ./update-asset-version.sh
-
-    - name: Reload PM2 process
-      become_user: antbuddy
-      shell: |
-        pm2 reload {{ pm2_process_id }}
+        cd ~/.antbuddy/ab-prod-beta/ &&
+        eval "$(ssh-agent -s)" &&
+        ssh-add ~/.ssh/id_ed25519 &&
+        git pull origin antbuddy-production &&
+        NODE_ENV="{{ node_env }}" gulp "{{ gulp_task }}" &&
+        ./update-asset-version.sh &&
+        pm2 reload "{{ pm2_process_id }}"
+      args:
+        executable: /bin/bash
 
     - name: Print completion message
       debug:
