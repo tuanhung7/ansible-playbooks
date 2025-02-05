@@ -45,7 +45,6 @@
     - name: Run update-asset-version.sh script
       become_user: antbuddy
       shell: |
-        cd ~/.antbuddy/ab-prod-beta/ && \
         ./update-asset-version.sh
       args:
         executable: /bin/bash
@@ -53,7 +52,7 @@
     - name: Reload PM2 process
       become_user: antbuddy
       shell: |
-        pm2 reload {{ pm2_process_id }}
+        pm2 reload 10
       args:
         executable: /bin/bash
 
