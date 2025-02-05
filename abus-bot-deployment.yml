@@ -1,6 +1,7 @@
 ---
 - name: Install services based on service name and ngrok URL
-  hosts: localhost
+  hosts: abus-bot-host
+  remote_user: root
   gather_facts: no
   vars:
     SERVICE_NAME: "{{ SERVICE_NAME }}"
