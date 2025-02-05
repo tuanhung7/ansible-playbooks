@@ -52,6 +52,14 @@
       args:
         executable: /bin/bash
 
+    - name: Run deploy script
+      become_user: antbuddy
+      shell: |
+        cd /home/antbuddy/.script && \
+        ./deploy.beta-02.sh
+      args:
+        executable: /bin/bash
+        
     - name: Print completion message
       debug:
         msg: "Deployment steps completed successfully!"
