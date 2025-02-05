@@ -1,0 +1,54 @@
+---
+- name: Setup antbot-frontend service
+  hosts: localhost
+  gather_facts: no
+  vars:
+    SERVICE_NAME: "{{ SERVICE_NAME }}"
+    NGROK_URL: "{{ NGROK_URL }}"
+    BASE_DIR: "{{ lookup('env', 'HOME') }}/.antbuddy/antbot"
+
+  tasks:
+    - name: Ensure SERVICE_NAME is valid
+      assert:
+        that:
+          - SERVICE_NAME == "antbot-frontend"
+        msg: "This playbook only supports 'antbot-frontend'."
+
+    - name: Check if antbot-frontend directory exists
+      stat:
+        path: "{{ BASE_DIR }}/antbot-frontend"
+      register: frontend_dir
+
+    - name: Fail if antbot-frontend directory is missing
+      fail:
+        msg: "Antbot-frontend directory not found!"
+      when: not frontend_dir.stat.exists
+
+    - name: Clean up antbot-frontend directory
+      file:
+        path: "{{ BASE_DIR }}/antbot-frontend"
+        state: directory
+        recurse: yes
+        mode: 0755
+      become: yes
+
+    - name: Download dist.tar.gz from ngrok URL
+      get_url:
+        url: "{{ NGROK_URL }}/dist.tar.gz"
+        dest: "{{ BASE_DIR }}/antbot-frontend/dist.tar.gz"
+        validate_certs: no
+
+    - name: Extract dist.tar.gz
+      unarchive:
+        src: "{{ BASE_DIR }}/antbot-frontend/dist.tar.gz"
+        dest: "{{ BASE_DIR }}/antbot-frontend"
+        remote_src: yes
+
+    - name: Remove dist.tar.gz file
+      file:
+        path: "{{ BASE_DIR }}/antbot-frontend/dist.tar.gz"
+        state: absent
+
+    - name: Antbot-frontend setup complete
+      debug:
+        msg: "Antbot-frontend setup complete!"
