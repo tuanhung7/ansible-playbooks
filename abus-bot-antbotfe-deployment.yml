@@ -1,6 +1,6 @@
 ---
 - name: Setup antbot-frontend service
-  hosts: abus-bot-host
+  hosts: abus-bot
   remote_user: root
   gather_facts: no
   vars:
