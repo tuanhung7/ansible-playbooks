@@ -28,10 +28,13 @@
         - standalone
         - themes
 
-    - name: Stop and remove Docker container
-      community.docker.docker_container:
-        name: kc-01
-        state: absent
+    - name: Stop Docker container
+      ansible.builtin.command:
+        cmd: sudo docker stop kc-01
+
+    - name: Remove Docker container
+      ansible.builtin.command:
+        cmd: sudo docker rm kc-01
 
     - name: Download files from ngrok
       get_url:
