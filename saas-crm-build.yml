@@ -1,0 +1,20 @@
+- name: Build and Deploy Application
+  hosts: local
+  become: true
+  tasks:
+    - name: Pull latest code from Git
+      git:
+        repo: 'https://github.com/example/app.git'
+        dest: '/home/user/app'
+        version: main
+
+    - name: Install dependencies
+      shell: cd /home/user/app && npm install
+
+    - name: Build project
+      shell: cd /home/user/app && npm run build
+
+    - name: Restart application
+      systemd:
+        name: app
+        state: restarted
