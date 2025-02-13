@@ -5,7 +5,7 @@
   tasks:
     - name: Copy tet_sync.txt to server
       copy:
-        src: ~/ansible/saas/tet_sync.txt  # File trên máy local
+        src: /home/antbuddy/ansible/saas/tet_sync.txt  # File trên máy local
         dest: /home/antbuddy/.deploy/tet_sync.txt  # File trên server
         owner: antbuddy
         group: antbuddy
