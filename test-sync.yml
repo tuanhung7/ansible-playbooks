@@ -1,12 +1,12 @@
 - name: Deploy tet_sync.txt to ab-crm-01
   hosts: ab-crm-01
-  remote_user: root
+  remote_user: antbuddy
   become: true  # Nếu cần quyền root để copy file vào thư mục hệ thống
   tasks:
     - name: Copy tet_sync.txt to server
       copy:
-        src: ansible/saas/tet_sync.txt  # File trên máy local
+        src: ~/ansible/saas/tet_sync.txt  # File trên máy local
         dest: /home/antbuddy/.deploy/tet_sync.txt  # File trên server
-        owner: root
-        group: root
+        owner: antbuddy
+        group: antbuddy
         mode: '0644'
