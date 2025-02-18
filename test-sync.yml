@@ -2,5 +2,8 @@
   hosts: localhost
   connection: local
   tasks:
-    - name: Copy tet_sync.txt to server using scp
-      command: scp -o StrictHostKeyChecking=no /home/antbuddy/ansible/saas/tet_sync.txt antbuddy@203.205.6.152:/home/antbuddy/.prod/tet_sync.txt
+    - name: Copy tet_sync.txt to server
+      ansible.builtin.copy:
+        src: /home/antbuddy/ansible/saas/tet_sync.txt
+        dest: /home/antbuddy/.prod/tet_sync.txt
+        remote_src: no
