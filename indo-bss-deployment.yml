@@ -1,0 +1,65 @@
+---
+- name: Deploy ab_bss service
+  hosts: all
+  become: yes
+  vars:
+    SERVICE_NAME: "{{ SERVICE_NAME }}"  # Biến này sẽ được truyền từ giao diện AWX
+    NGROK_URL: "{{ NGROK_URL }}"        # Biến này sẽ được truyền từ giao diện AWX
+
+  tasks:
+    - name: Kiểm tra giá trị biến được truyền vào từ AWX
+      debug:
+        msg:
+          - "Service Name: {{ SERVICE_NAME }}"
+          - "Ngrok URL: {{ NGROK_URL }}"
+
+    - name: Kiểm tra nếu thư mục {{ SERVICE_NAME }} đã tồn tại
+      stat:
+        path: "/home/ubuntu/{{ SERVICE_NAME }}"
+      register: folder_stat
+
+    - name: Đổi tên thư mục nếu đã tồn tại
+      command:
+        cmd: "mv /home/ubuntu/{{ SERVICE_NAME }} /home/ubuntu/{{ SERVICE_NAME }}_{{ ansible_date_time.date }}_{{ ansible_date_time.hour }}{{ ansible_date_time.minute }}"
+      when: folder_stat.stat.exists
+
+    - name: Tải file {{ SERVICE_NAME }}.tar.gz từ ngrok
+      get_url:
+        url: "{{ NGROK_URL }}/{{ SERVICE_NAME }}.tar.gz"
+        dest: "/home/ubuntu/{{ SERVICE_NAME }}.tar.gz"
+        validate_certs: no
+      register: download_status
+
+    - name: Giải nén {{ SERVICE_NAME }}.tar.gz
+      unarchive:
+        src: "/home/ubuntu/{{ SERVICE_NAME }}.tar.gz"
+        dest: "/home/ubuntu"
+        remote_src: yes
+      when: download_status is succeeded
+
+    - name: Xóa file {{ SERVICE_NAME }}.tar.gz sau khi giải nén
+      file:
+        path: "/home/ubuntu/{{ SERVICE_NAME }}.tar.gz"
+        state: absent
+
+    - name: Dừng container Docker hiện tại (nếu có)
+      command:
+        cmd: "docker-compose -f docker-compose.prod.yaml --env-file env/.env.prod down"
+      args:
+        chdir: "/home/ubuntu/{{ SERVICE_NAME }}"
+      ignore_errors: yes
+
+    - name: Khởi động Docker Compose với build
+      command:
+        cmd: "docker-compose -f docker-compose.prod.yaml --env-file env/.env.prod up --build -d"
+      args:
+        chdir: "/home/ubuntu/{{ SERVICE_NAME }}"
+
+    - name: Xác nhận dịch vụ đã khởi động
+      shell: "docker ps --format '{{ '{{' }}.Names{{ '}}' }}' | grep {{ SERVICE_NAME }}"
+      register: check_service
+      changed_when: false
+      failed_when: check_service.rc != 0
+
+    - debug:
+        msg: "Service {{ SERVICE_NAME }} đã triển khai thành công!"
