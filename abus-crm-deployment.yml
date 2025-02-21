@@ -9,68 +9,87 @@
     ngrok_url: "{{ NGROK_URL }}"
 
   tasks:
-    - name: Ensure download directory exists
+    - name: Kiểm tra tham số đầu vào
+      fail:
+        msg: "Usage: ansible-playbook deploy.yml -e 'SERVICE_NAME=service_name NGROK_URL=ngrok_url'"
+      when: service_name is not defined or ngrok_url is not defined
+
+    - name: Tạo thư mục tải xuống
       file:
         path: "{{ base_dir_download }}"
         state: directory
         mode: '0755'
 
-    - name: Clean up download directory
+    - name: Xóa thư mục tải xuống (nếu có)
       file:
         path: "{{ base_dir_download }}"
         state: absent
-      ignore_errors: yes
 
-    - name: Recreate download directory
+    - name: Tạo lại thư mục tải xuống
       file:
         path: "{{ base_dir_download }}"
         state: directory
         mode: '0755'
 
-    - name: Download the service tarball
+    - name: Tải file nén từ ngrok
       get_url:
         url: "{{ ngrok_url }}/{{ service_name }}.tar.gz"
         dest: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
         validate_certs: no
 
-    - name: Check if the tarball exists
+    - name: Kiểm tra sự tồn tại của file tar.gz
       stat:
         path: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
       register: tarball
 
-    - name: Fail if tarball does not exist
+    - name: Báo lỗi nếu file tar.gz không tồn tại
       fail:
         msg: "Error: {{ service_name }}.tar.gz not found after download!"
       when: not tarball.stat.exists
 
-    - name: Extract the tarball
+    - name: Giải nén thư mục
       unarchive:
         src: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
         dest: "{{ base_dir_download }}"
         remote_src: yes
 
-    - name: Check if 'dist' directory exists
+    - name: Kiểm tra thư mục 'dist' tồn tại sau khi giải nén
       stat:
         path: "{{ base_dir_download }}/dist"
       register: dist_dir
 
-    - name: Fail if 'dist' directory does not exist
+    - name: Báo lỗi nếu thư mục 'dist' không tồn tại
       fail:
         msg: "Error: 'dist' directory not found after extraction!"
       when: not dist_dir.stat.exists
 
-    - name: Ensure destination directory exists
+    - name: Tạo thư mục đích nếu chưa tồn tại
       file:
         path: "{{ base_dir_sync }}/{{ service_name }}"
         state: directory
         mode: '0755'
 
-    - name: Synchronize files to destination directory
+    - name: Đồng bộ dữ liệu vào thư mục đích
       synchronize:
         src: "{{ base_dir_download }}/dist/"
         dest: "{{ base_dir_sync }}/{{ service_name }}/"
         recursive: yes
 
-    - name: Print completion message
+    - name: Nếu service là 'beeiq-web', đồng bộ thêm vào '/b'
+      synchronize:
+        src: "{{ base_dir_download }}/dist/"
+        dest: "{{ base_dir_sync }}/{{ service_name }}/b/"
+        recursive: yes
+      when: service_name == "beeiq-web"
+
+    - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
+        /home/antbuddy/.nvm/versions/node/v15.14.0/bin/pm2 start {{ base_dir_sync }}/{{ service_name }}/beeiq.json
+      args:
+        executable: /bin/bash
+      when: service_name != "beeiq-web"
+
+    - name: In thông báo hoàn thành
       debug:
         msg: "{{ service_name }} setup complete!"

@@ -7,3 +7,11 @@
         src: /home/antbuddy/ansible/saas/tet_sync.txt
         dest: /home/antbuddy/.prod/tet_sync.txt
         remote_src: no
+
+
+    - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
+        /home/antbuddy/.nvm/versions/node/v15.14.0/bin/pm2 start {{ BASE_DIR }}/{{ service_name }}/beeiq.json
+      args:
+        executable: /bin/bash
