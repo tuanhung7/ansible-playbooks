@@ -1,6 +1,6 @@
 ---
 - name: Deploy and configure services
-  hosts: root
+  hosts: abus-crm
   become: yes
   vars:
     base_dir_sync: "/home/antbuddy/.antbuddy"
