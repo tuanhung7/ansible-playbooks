@@ -85,6 +85,6 @@
     - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
       shell: |
         export PATH="$HOME/.nvm/versions/node/v12.22.12/bin:$PATH" && \
-        /root/.nvm/versions/node/v12.22.12/bin/pm2 start {{ BASE_DIR }}/ab_callcenter_ui/ab.json
+        /root/.nvm/versions/node/v12.22.12/bin/pm2 reload 90
       args:
         executable: /bin/bash
