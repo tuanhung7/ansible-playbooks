@@ -7,6 +7,8 @@
     SERVICE_NAME: "{{ service_name }}"
     NGROK_URL: "{{ ngrok_url }}"
     BASE_DIR: "/home/abus/.antbuddy"
+    TIMESTAMP: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"  # Tạo timestamp
+
   tasks:
     - name: Đảm bảo thư mục {{ BASE_DIR }} tồn tại
       ansible.builtin.file:
@@ -14,10 +16,16 @@
         state: directory
         mode: '0755'
 
-    - name: Xóa thư mục ab_callcenter_ui cũ nếu tồn tại
-      ansible.builtin.file:
-        path: "{{ BASE_DIR }}/ab_callcenter_ui"
-        state: absent
+    # - name: Xóa thư mục ab_callcenter_ui cũ nếu tồn tại
+    #   ansible.builtin.file:
+    #     path: "{{ BASE_DIR }}/ab_callcenter_ui"
+    #     state: absent
+
+    - name: Đổi tên thư mục ab_callcenter_ui cũ nếu tồn tại
+      command: mv "{{ BASE_DIR }}/ab_callcenter_ui" "{{ BASE_DIR }}/ab_callcenter_ui_{{ TIMESTAMP }}"
+      args:
+        removes: "{{ BASE_DIR }}/ab_callcenter_ui"
+      ignore_errors: yes  
 
     - name: Tải file ab_callcenter_ui.tar.gz từ {{ NGROK_URL }}
       ansible.builtin.get_url:
@@ -74,5 +82,9 @@
         mode: '0777'
         recurse: yes
 
-    - name: Khởi động dịch vụ bằng PM2
-      command: pm2 start {{ BASE_DIR }}/ab_callcenter_ui/ab.json
+    - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v12.22.12/bin:$PATH" && \
+        /root/.nvm/versions/node/v12.22.12/bin/pm2 start {{ BASE_DIR }}/ab_callcenter_ui/ab.json
+      args:
+        executable: /bin/bash

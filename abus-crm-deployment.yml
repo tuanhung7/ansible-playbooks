@@ -1,6 +1,6 @@
 ---
 - name: Deploy and configure services
-  hosts: all
+  hosts: root
   become: yes
   vars:
     base_dir_sync: "/home/antbuddy/.antbuddy"
