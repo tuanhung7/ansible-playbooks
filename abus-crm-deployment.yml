@@ -9,11 +9,7 @@
     ngrok_url: "{{ NGROK_URL }}"
 
   tasks:
-    - name: Kiểm tra tham số đầu vào
-      fail:
-        msg: "Usage: ansible-playbook deploy.yml -e 'SERVICE_NAME=service_name NGROK_URL=ngrok_url'"
-      when: service_name is not defined or ngrok_url is not defined
-
+  
     - name: Tạo thư mục tải xuống
       file:
         path: "{{ base_dir_download }}"
