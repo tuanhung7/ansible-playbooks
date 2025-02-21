@@ -66,18 +66,12 @@
         mode: '0755'
 
     - name: Đồng bộ dữ liệu vào thư mục đích
-      synchronize:
-        src: "{{ base_dir_download }}/dist/"
-        dest: "{{ base_dir_sync }}/{{ service_name }}/"
-        recursive: yes
+      command: rsync -ravz "{{ base_dir_download }}/dist/" "{{ base_dir_sync }}/{{ service_name }}/"
 
     - name: Nếu service là 'beeiq-web', đồng bộ thêm vào '/b'
-      synchronize:
-        src: "{{ base_dir_download }}/dist/"
-        dest: "{{ base_dir_sync }}/{{ service_name }}/b/"
-        recursive: yes
+      command: rsync -ravz "{{ base_dir_download }}/dist/" "{{ base_dir_sync }}/{{ service_name }}/b/"
       when: service_name == "beeiq-web"
-
+            
     - name: Reload PM2 cho beeiq-api
       shell: |
         export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
