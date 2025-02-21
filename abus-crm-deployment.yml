@@ -44,10 +44,7 @@
       when: not tarball.stat.exists
 
     - name: Giải nén thư mục
-      unarchive:
-        src: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
-        dest: "{{ base_dir_download }}"
-        remote_src: yes
+      command: tar -xvzf {{ base_dir_download }}/{{ service_name }}.tar.gz -C {{ base_dir_download }}
 
     - name: Kiểm tra thư mục 'dist' tồn tại sau khi giải nén
       stat:
