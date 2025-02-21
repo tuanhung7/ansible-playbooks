@@ -1,0 +1,90 @@
+---
+- name: Install ab_callcenter_ui Service
+  hosts: indo-oss
+  remote_user: root
+  become: yes
+  vars:
+    SERVICE_NAME: "{{ service_name }}"
+    NGROK_URL: "{{ ngrok_url }}"
+    BASE_DIR: "/home/ubuntu/.prod"
+    TIMESTAMP: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"  # Tạo timestamp
+
+  tasks:
+    - name: Đảm bảo thư mục {{ BASE_DIR }} tồn tại
+      ansible.builtin.file:
+        path: "{{ BASE_DIR }}"
+        state: directory
+        mode: '0755'
+
+    # - name: Xóa thư mục ab_callcenter_ui cũ nếu tồn tại
+    #   ansible.builtin.file:
+    #     path: "{{ BASE_DIR }}/ab_callcenter_ui"
+    #     state: absent
+
+    - name: Đổi tên thư mục ab_callcenter_ui cũ nếu tồn tại
+      command: mv "{{ BASE_DIR }}/ab_callcenter_ui" "{{ BASE_DIR }}/ab_callcenter_ui_{{ TIMESTAMP }}"
+      args:
+        removes: "{{ BASE_DIR }}/ab_callcenter_ui"
+      ignore_errors: yes  
+
+    - name: Tải file ab_callcenter_ui.tar.gz từ {{ NGROK_URL }}
+      ansible.builtin.get_url:
+        url: "{{ NGROK_URL }}/ab_callcenter_ui.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_ui.tar.gz"
+        mode: '0644'
+
+    - name: Giải nén file ab_callcenter_ui.tar.gz
+      ansible.builtin.unarchive:
+        src: "{{ BASE_DIR }}/ab_callcenter_ui.tar.gz"
+        dest: "{{ BASE_DIR }}/"
+        remote_src: yes
+
+    - name: Xóa file ab_callcenter_ui.tar.gz sau khi giải nén
+      ansible.builtin.file:
+        path: "{{ BASE_DIR }}/ab_callcenter_ui.tar.gz"
+        state: absent
+
+    - name: Kiểm tra file node_modules.tar.gz trong thư mục ab_callcenter_ui
+      ansible.builtin.stat:
+        path: "{{ BASE_DIR }}/ab_callcenter_ui/node_modules.tar.gz"
+      register: node_modules_file
+
+    - name: Giải nén node_modules.tar.gz nếu tồn tại
+      ansible.builtin.unarchive:
+        src: "{{ BASE_DIR }}/ab_callcenter_ui/node_modules.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_ui"
+        remote_src: yes
+      when: node_modules_file.stat.exists
+
+    - name: Kiểm tra file node_modules.tar.gz trong thư mục cha
+      ansible.builtin.stat:
+        path: "{{ BASE_DIR }}/node_modules.tar.gz"
+      register: parent_node_modules_file
+
+    - name: Sao chép node_modules.tar.gz từ thư mục cha nếu cần
+      ansible.builtin.copy:
+        src: "{{ BASE_DIR }}/node_modules.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_ui/node_modules.tar.gz"
+        remote_src: yes
+      when: not node_modules_file.stat.exists and parent_node_modules_file.stat.exists
+
+    - name: Giải nén node_modules.tar.gz nếu sao chép thành công
+      ansible.builtin.unarchive:
+        src: "{{ BASE_DIR }}/ab_callcenter_ui/node_modules.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_ui"
+        remote_src: yes
+      when: not node_modules_file.stat.exists and parent_node_modules_file.stat.exists
+
+    - name: Cấp quyền đầy đủ cho thư mục ab_callcenter_ui
+      ansible.builtin.file:
+        path: "{{ BASE_DIR }}/ab_callcenter_ui"
+        state: directory
+        mode: '0777'
+        recurse: yes
+
+    - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v12.22.12/bin:$PATH" && \
+        /root/.nvm/versions/node/v12.22.12/bin/pm2 reload 90
+      args:
+        executable: /bin/bash
