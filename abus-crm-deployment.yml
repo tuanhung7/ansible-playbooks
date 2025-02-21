@@ -9,7 +9,7 @@
     ngrok_url: "{{ NGROK_URL }}"
 
   tasks:
-  
+
     - name: Tạo thư mục tải xuống
       file:
         path: "{{ base_dir_download }}"
@@ -78,13 +78,29 @@
         recursive: yes
       when: service_name == "beeiq-web"
 
-    - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
+    - name: Reload PM2 cho beeiq-api
       shell: |
         export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
-        /home/antbuddy/.nvm/versions/node/v15.14.0/bin/pm2 start {{ base_dir_sync }}/{{ service_name }}/beeiq.json
+        /home/antbuddy/.nvm/versions/node/v15.14.0/bin/pm2 reload 21
       args:
         executable: /bin/bash
-      when: service_name != "beeiq-web"
+      when: service_name == "beeiq-api"
+
+    - name: Reload PM2 cho beeiq-background
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
+        /home/antbuddy/.nvm/versions/node/v15.14.0/bin/pm2 reload 22
+      args:
+        executable: /bin/bash
+      when: service_name == "beeiq-background"
+
+    - name: Reload PM2 cho beeiq-facebook
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
+        /home/antbuddy/.nvm/versions/node/v15.14.0/bin/pm2 reload 24
+      args:
+        executable: /bin/bash
+      when: service_name == "beeiq-facebook"
 
     - name: In thông báo hoàn thành
       debug:
