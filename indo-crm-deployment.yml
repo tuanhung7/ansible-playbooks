@@ -1,0 +1,98 @@
+---
+- name: Deploy and configure services
+  hosts: indo-crm
+  become: yes
+  vars:
+    base_dir_sync: "/home/ubuntu/.beeiq"
+    base_dir_download: "/home/ubuntu/.temp"
+    service_name: "{{ SERVICE_NAME }}"
+    ngrok_url: "{{ NGROK_URL }}"
+
+  tasks:
+
+    - name: Tạo thư mục tải xuống
+      file:
+        path: "{{ base_dir_download }}"
+        state: directory
+        mode: '0755'
+
+    - name: Xóa thư mục tải xuống (nếu có)
+      file:
+        path: "{{ base_dir_download }}"
+        state: absent
+
+    - name: Tạo lại thư mục tải xuống
+      file:
+        path: "{{ base_dir_download }}"
+        state: directory
+        mode: '0755'
+
+    - name: Tải file nén từ ngrok
+      get_url:
+        url: "{{ ngrok_url }}/{{ service_name }}.tar.gz"
+        dest: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
+        validate_certs: no
+
+    - name: Kiểm tra sự tồn tại của file tar.gz
+      stat:
+        path: "{{ base_dir_download }}/{{ service_name }}.tar.gz"
+      register: tarball
+
+    - name: Báo lỗi nếu file tar.gz không tồn tại
+      fail:
+        msg: "Error: {{ service_name }}.tar.gz not found after download!"
+      when: not tarball.stat.exists
+
+    - name: Giải nén thư mục
+      command: tar -xvzf {{ base_dir_download }}/{{ service_name }}.tar.gz -C {{ base_dir_download }}
+
+    - name: Kiểm tra thư mục 'dist' tồn tại sau khi giải nén
+      stat:
+        path: "{{ base_dir_download }}/dist"
+      register: dist_dir
+
+    - name: Báo lỗi nếu thư mục 'dist' không tồn tại
+      fail:
+        msg: "Error: 'dist' directory not found after extraction!"
+      when: not dist_dir.stat.exists
+
+    - name: Tạo thư mục đích nếu chưa tồn tại
+      file:
+        path: "{{ base_dir_sync }}/{{ service_name }}"
+        state: directory
+        mode: '0755'
+
+    - name: Đồng bộ dữ liệu vào thư mục đích
+      command: rsync -ravz "{{ base_dir_download }}/dist/" "{{ base_dir_sync }}/{{ service_name }}/"
+
+    - name: Nếu service là 'beeiq-web', đồng bộ thêm vào '/b'
+      command: rsync -ravz "{{ base_dir_download }}/dist/" "{{ base_dir_sync }}/{{ service_name }}/b/"
+      when: service_name == "beeiq-web"
+            
+    - name: Reload PM2 cho beeiq-api
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v13.14.0/bin:$PATH" && \
+        /home/ubuntu/.nvm/versions/node/v13.14.0/bin/pm2 reload 21
+      args:
+        executable: /bin/bash
+      when: service_name == "beeiq-api"
+
+    - name: Reload PM2 cho beeiq-background
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v13.14.0/bin:$PATH" && \
+        /home/ubuntu/.nvm/versions/node/v13.14.0/bin/pm2 reload 22
+      args:
+        executable: /bin/bash
+      when: service_name == "beeiq-background"
+
+    - name: Reload PM2 cho beeiq-facebook
+      shell: |
+        export PATH="$HOME/.nvm/versions/node/v13.14.0/bin:$PATH" && \
+        /home/ubuntu/.nvm/versions/node/v13.14.0/bin/pm2 reload 24
+      args:
+        executable: /bin/bash
+      when: service_name == "beeiq-facebook"
+
+    - name: In thông báo hoàn thành
+      debug:
+        msg: "{{ service_name }} setup complete!"
