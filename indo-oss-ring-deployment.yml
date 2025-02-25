@@ -89,7 +89,7 @@
 
     - name: Khởi động dịch vụ bằng PM2 với đúng phiên bản Node.js
       shell: |
-        export PATH="$HOME/.nvm/versions/node/v12.22.12/bin:$PATH" && \
-        /home/ubuntu/.nvm/versions/node/v12.22.12/bin/pm2 reload 1
+        export PATH="$HOME/.nvm/versions/node/v15.14.0/bin:$PATH" && \
+        /home/ubuntu/.nvm/versions/node/v15.14.0/bin/pm2 reload 1
       args:
         executable: /bin/bash
