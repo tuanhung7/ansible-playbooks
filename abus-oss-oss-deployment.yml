@@ -46,6 +46,37 @@
         path: "{{ BASE_DIR }}/ab_callcenter_oss.tar.gz"
         state: absent
 
+    - name: Kiểm tra file node_modules.tar.gz trong thư mục ab_callcenter_oss
+      ansible.builtin.stat:
+        path: "{{ BASE_DIR }}/ab_callcenter_oss/node_modules.tar.gz"
+      register: node_modules_file
+
+    - name: Giải nén node_modules.tar.gz nếu tồn tại
+      ansible.builtin.unarchive:
+        src: "{{ BASE_DIR }}/ab_callcenter_oss/node_modules.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_oss"
+        remote_src: yes
+      when: node_modules_file.stat.exists
+
+    - name: Kiểm tra file node_modules.tar.gz trong thư mục cha
+      ansible.builtin.stat:
+        path: "{{ BASE_DIR }}/oss_node_modules/node_modules.tar.gz"
+      register: parent_node_modules_file
+
+    - name: Sao chép node_modules.tar.gz từ thư mục cha nếu cần
+      ansible.builtin.copy:
+        src: "{{ BASE_DIR }}/oss_node_modules/node_modules.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_oss/node_modules.tar.gz"
+        remote_src: yes
+      when: not node_modules_file.stat.exists and parent_node_modules_file.stat.exists
+
+    - name: Giải nén node_modules.tar.gz nếu sao chép thành công
+      ansible.builtin.unarchive:
+        src: "{{ BASE_DIR }}/ab_callcenter_oss/node_modules.tar.gz"
+        dest: "{{ BASE_DIR }}/ab_callcenter_oss"
+        remote_src: yes
+      when: not node_modules_file.stat.exists and parent_node_modules_file.stat.exists
+
     - name: Cấp quyền đầy đủ cho thư mục ab_callcenter_oss
       ansible.builtin.file:
         path: "{{ BASE_DIR }}/ab_callcenter_oss"

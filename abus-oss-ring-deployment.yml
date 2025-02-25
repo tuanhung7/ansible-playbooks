@@ -58,12 +58,12 @@
 
     - name: Kiểm tra file node_modules.tar.gz trong thư mục cha
       ansible.builtin.stat:
-        path: "{{ BASE_DIR }}/node_modules.tar.gz"
+        path: "{{ BASE_DIR }}/ring_node_modules/node_modules.tar.gz"
       register: parent_node_modules_file
 
     - name: Sao chép node_modules.tar.gz từ thư mục cha nếu cần
       ansible.builtin.copy:
-        src: "{{ BASE_DIR }}/node_modules.tar.gz"
+        src: "{{ BASE_DIR }}/ring_node_modules/node_modules.tar.gz"
         dest: "{{ BASE_DIR }}/ab_callcenter_ui/node_modules.tar.gz"
         remote_src: yes
       when: not node_modules_file.stat.exists and parent_node_modules_file.stat.exists
