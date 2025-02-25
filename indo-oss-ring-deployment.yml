@@ -27,6 +27,11 @@
         removes: "{{ BASE_DIR }}/ab_callcenter_ui"
       ignore_errors: yes  
 
+    - name: Xóa file ab_callcenter_ui.tar.gz nếu tồn tại
+      ansible.builtin.file:
+        path: "{{ BASE_DIR }}/ab_callcenter_ui.tar.gz"
+        state: absent
+
     - name: Tải file ab_callcenter_ui.tar.gz từ {{ NGROK_URL }}
       ansible.builtin.get_url:
         url: "{{ NGROK_URL }}/ab_callcenter_ui.tar.gz"
