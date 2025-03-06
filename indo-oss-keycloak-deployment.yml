@@ -6,7 +6,7 @@
   vars:
     service_name: "{{ SERVICE_NAME }}"
     ngrok_url: "{{ NGROK_URL }}"
-    service_path: "/root/.prod/{{ SERVICE_NAME }}"
+    service_path: "/home/ubuntu/.prod/{{ SERVICE_NAME }}"
 
   tasks:
     - name: Check if service path exists
